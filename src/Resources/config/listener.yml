@@ -1,0 +1,3 @@
+services:
+    Contao\ActivityBundle\EventListener\:
+        resource: '../../EventListener'
