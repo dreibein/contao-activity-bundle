@@ -45,7 +45,10 @@ class ParseBackendTemplateListener
     public function constructMonthArray($entries)
     {
         // Get all enabled users
-        $userArray = UserModel::findByDisable(0)->fetchAll();
+        $userArray = UserModel::findByDisable(0);
+        if (null !== $userArray) {
+            $userArray = $userArray->fetchAll();
+        }
 
         $months = [
             1 => 'Januar',
