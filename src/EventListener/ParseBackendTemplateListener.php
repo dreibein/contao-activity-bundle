@@ -17,7 +17,7 @@ use Contao\UserModel;
 /**
  * @Hook("parseBackendTemplate")
  */
-class parseBackendTemplateListener
+class ParseBackendTemplateListener
 {
     public function __invoke(string $buffer, string $template): string
     {
@@ -45,10 +45,7 @@ class parseBackendTemplateListener
     public function constructMonthArray($entries)
     {
         // Get all enabled users
-        $userArray = UserModel::findByDisable(0);
-        if (null !== $userArray) {
-            $userArray = $userArray->fetchAll();
-        }
+        $userArray = UserModel::findByDisable(0)->fetchAll();
 
         $months = [
             1 => 'Januar',

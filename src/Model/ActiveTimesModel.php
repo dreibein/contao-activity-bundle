@@ -1,56 +1,76 @@
 <?php
 
+declare(strict_types=1);
+
+/*
+ * This file is part of Dreibein Activity Bundle.
+ *
+ * (c) Werbeagentur Dreibein GmbH
+ */
+
 namespace Contao\ActivityBundle\Model;
 
-use Contao\Database;
 use Contao\Model;
 
 /**
- * @property integer $id
- * @property string  $username
- * @property integer $length
- * @property string  $month
+ * @property int    $id
+ * @property string $username
+ * @property int    $length
+ * @property string $month
+ * @property int    $year
  */
 class ActiveTimesModel extends Model
 {
     protected static $strTable = 'tl_active_times';
 
-    // INSERTS THE GENERATED ACTIVE TIMES INTO DATABASE
-    public static function insertTimes ($userTimesArray) {
+    // Inserts the generated active times into database
+    public static function insertTimes($userTimesArray): void
+    {
         if ($userTimesArray) {
             foreach ($userTimesArray as $user => $times) {
                 foreach ($times as $time) {
                     if ($time['length'] <= 0) {
                         continue;
                     }
-                    $objDatabase = Database::getInstance();
-                    $sql = "INSERT INTO tl_active_times (username, length, month, year) VALUES (?, ?, ?, ?)";
-                    $objResult = $objDatabase->prepare($sql)->execute([$user, $time['length'], (int)$time['month'], $time['year']]);
-
+                    $activeTimesModel = new self();
+                    $activeTimesModel->username = $user;
+                    $activeTimesModel->length = $time['length'];
+                    $activeTimesModel->month = $time['month'];
+                    $activeTimesModel->year = $time['year'];
+                    $activeTimesModel->save();
                 }
             }
         }
     }
 
-    // GET ALL ACTIVE TIMES SORTED BY USERNAME ASCENDING
-    public static function getAllEntries () {
-        $objDatabase = Database::getInstance();
+    // Get all active times
+    public static function getAllEntries()
+    {
         $currentYear = date('Y');
         $lastYear = $currentYear - 1;
         $currentMonth = date('n');
         $entryArray[$currentYear] = [];
         $entryArray[$lastYear] = [];
 
-        $sqlCurrentYear = "SELECT * FROM tl_active_times WHERE year = ? ORDER BY username ASC";
-        $resultCurrentYear = $objDatabase->prepare($sqlCurrentYear)->execute([$currentYear]);
+        $currentYearArray = self::findBy('year', $currentYear);
+        if (null !== $currentYearArray) {
+            $currentYearArray = $currentYearArray->fetchAll();
+        }
 
-        $sqlLastYear = "SELECT * FROM tl_active_times WHERE year = ? AND month > ? ORDER BY username ASC";
-        $resultLastYear = $objDatabase->prepare($sqlLastYear)->execute([$lastYear,$currentMonth]);
+        $lastYearArray = static::findBy(['year = ?', 'month > ?'], [$lastYear, $currentMonth]);
 
-        $currentYearArray = $resultCurrentYear->fetchAllAssoc();
-        $lastYearArray = $resultLastYear->fetchAllAssoc();
-        $entryArray = array_merge($currentYearArray,$lastYearArray);
+        if (null !== $lastYearArray) {
+            $lastYearArray = $lastYearArray->fetchAll();
+        }
 
-        return $entryArray;
+        if (null !== $lastYearArray && null !== $currentYearArray) {
+            return array_merge($currentYearArray, $lastYearArray);
+        }
+        if (null === $lastYearArray && null !== $currentYearArray) {
+            return $currentYearArray;
+        }
+        if (null !== $lastYearArray && null === $currentYearArray) {
+            return $lastYearArray;
+        }
     }
 }

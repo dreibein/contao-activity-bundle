@@ -8,3 +8,5 @@
 
 # PhpUnit
 /phpunit.xml
+
+/tests/

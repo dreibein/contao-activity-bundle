@@ -1,12 +1,22 @@
 <?php
 
+declare(strict_types=1);
+
+/*
+ * This file is part of Dreibein Activity Bundle.
+ *
+ * (c) Werbeagentur Dreibein GmbH
+ */
 
 namespace Contao\ActivityBundle\EventListener;
 
 use Contao\ActivityBundle\Model\ActiveTimesModel;
+use Contao\ActivityBundle\Model\LogModel;
+use Contao\BackendUser;
 use Contao\CoreBundle\ServiceAnnotation\Hook;
-use Contao\Database;
+use Contao\Model\Collection;
 use Contao\User;
+use Contao\UserModel;
 
 /**
  * @Hook("postLogin")
@@ -15,85 +25,92 @@ class PostLoginListener
 {
     public function __invoke(User $user): void
     {
-        if ($user instanceof \Contao\BackendUser) {
-            $objDatabase = Database::getInstance();
-
-            $allUsers = $this->getActiveUsers($objDatabase);
-            $userTimesArray = $this->getTimesPerUser($allUsers, $objDatabase);
+        if ($user instanceof BackendUser) {
+            $allUsers = UserModel::findByDisable(0);
+            if (null === $allUsers) {
+                return;
+            }
+            $userTimesArray = $this->getTimesPerUser($allUsers);
             ActiveTimesModel::insertTimes($userTimesArray);
         }
     }
 
-    // GET ALL USERES WHICH ARE NOT DISABLED
-    public function getActiveUsers ($objDatabase) {
-        $sqlGetActiveUsers = "SELECT username,currentLogin FROM tl_user WHERE disable != 1";
-        $objResult = $objDatabase->prepare($sqlGetActiveUsers)->execute();
-        return $objResult->fetchAllAssoc();
-    }
-
-    // GET ALL LOGS FOR EACH USER
-    public function getTimesPerUser (array $users, Object $objDatabase) {
+    // Get all logs for each user
+    public function getTimesPerUser(Collection $users)
+    {
+        /** @var UserModel $user */
         foreach ($users as $user) {
-            $sqlGetUncheckedLogEntries = "SELECT username,action,tstamp,text FROM tl_log WHERE inStatistic = 0 AND username = ? ORDER BY tstamp ASC";
-            $objResult = $objDatabase->prepare($sqlGetUncheckedLogEntries)->execute([$user['username']]);
-            $objResult = $objResult->fetchAllAssoc();
-            $timesArray = $this->evaluateTimes($objResult);
+            $logCollection = LogModel::findBy(['inStatistic = ?', 'username = ?'], [0, $user->username], ['order' => 'tstamp ASC']);
+
+            if (null === $logCollection) {
+                continue;
+            }
+
+            $timesArray = $this->evaluateTimes($logCollection);
 
             if ($timesArray) {
-                $activeTimes[$user['username']] = $timesArray;
+                $activeTimes[$user->username] = $timesArray;
             }
         }
-        $sqlInStatistic = "UPDATE tl_log SET inStatistic = 1";
-        $objDatabase->prepare($sqlInStatistic)->execute();
+
+        $logCollection = LogModel::findBy('inStatistic', 0);
+        if (null !== $logCollection) {
+            /** @var LogModel $logEntry */
+            foreach ($logCollection as $logEntry) {
+                $logEntry->inStatistic = 1;
+                $logEntry->save();
+            }
+        }
 
         return $activeTimes;
     }
 
-    // EVALUATES THE ACTIVE TIMES PER USER
-    public function evaluateTimes ($logArray) {
-        // SETTING A TIME ARRAY INITIALLY
+    // Evaluates the active times per user
+    public function evaluateTimes(Collection $logCollection)
+    {
+        // Setting a time array initially
         $savedTimes = [
             'startTime' => 0,
             'endTime' => 0,
         ];
-        // IS 1 IF LAST ENTRY WAS A LOGIN
+
+        // Is 1 if last entry was a login
         $wasLogin = 1;
 
-        // VARIABLE FOR FINAL ACTIVE TIMES
+        // Variable for final active times
         $finalArray = [];
 
-        // ARRAY INDEX ORIGINALLY FOR DEBUGGING PURPOSES
+        // Array index originally for debugging purposes
         $arrayIndex = 0;
 
-        // LOOP LOGENTRIES
-        foreach ($logArray as $entry) {
-
-            // SKIP AUTO LOG OUT; CAUSES BLOATED ACTIVE TIMES
-            if ($entry['action'] === 'ACCESS' && strpos($entry['text'],'logged out automatically')) {
+        // Loop logentries
+        /** @var LogModel $entry */
+        foreach ($logCollection as $entry) {
+            // Skip auto logout; causes bloated active times
+            if ('ACCESS' === $entry->action && false !== strpos($entry->text, 'logged out automatically')) {
                 continue;
             }
 
-            if ($entry['action'] === 'ACCESS' && strpos($entry['text'],'logged in')) {
-
-                // IF LAST ENTRY WAS NOT A LOGIN --> TIME CAN BE SAVED
-                if ($wasLogin === 0) {
+            if ('ACCESS' === $entry->action && false !== strpos($entry->text, 'logged in')) {
+                // If last entry was not a login --> time can be saved
+                if (0 === $wasLogin) {
                     $finalArray[$arrayIndex]['length'] = $savedTimes['endTime'] - $savedTimes['startTime'];
-                    $finalArray[$arrayIndex]['month'] = date('n', $savedTimes['endTime']);
-                    $finalArray[$arrayIndex]['year'] = date('Y', $savedTimes['endTime']);
+                    $finalArray[$arrayIndex]['month'] = date('n', (int) $savedTimes['endTime']);
+                    $finalArray[$arrayIndex]['year'] = date('Y', (int) $savedTimes['endTime']);
                 }
-                $savedTimes['startTime'] = $entry['tstamp'];
+                $savedTimes['startTime'] = $entry->tstamp;
                 $wasLogin = 1;
             } else {
-                // KICKS IN IF FIRST LOG ENTRY WAS NOT A LOGIN (WON'T BE MOST OF THE TIME)
-                if ($arrayIndex === 0) {
-                    $savedTimes['startTime'] = $entry['tstamp'];
+                // Kicks in if first log entry was not a login
+                if (0 === $arrayIndex) {
+                    $savedTimes['startTime'] = $entry->tstamp;
                 }
 
-                $savedTimes['endTime'] = $entry['tstamp'];
+                $savedTimes['endTime'] = $entry->tstamp;
                 $wasLogin = 0;
             }
 
-            $arrayIndex++;
+            ++$arrayIndex;
         }
 
         return $finalArray;
