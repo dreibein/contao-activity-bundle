@@ -25,14 +25,15 @@ class PostLoginListener
 {
     public function __invoke(User $user): void
     {
-        if ($user instanceof BackendUser) {
-            $allUsers = UserModel::findByDisable(0);
-            if (null === $allUsers) {
-                return;
-            }
-            $userTimesArray = $this->getTimesPerUser($allUsers);
-            ActiveTimesModel::insertTimes($userTimesArray);
+        if (!$user instanceof BackendUser) {
+            return;
         }
+        $allUsers = UserModel::findByDisable(0);
+        if (null === $allUsers) {
+            return;
+        }
+        $userTimesArray = $this->getTimesPerUser($allUsers);
+        ActiveTimesModel::insertTimes($userTimesArray);
     }
 
     // Get all logs for each user
@@ -50,15 +51,6 @@ class PostLoginListener
 
             if ($timesArray) {
                 $activeTimes[$user->username] = $timesArray;
-            }
-        }
-
-        $logCollection = LogModel::findBy('inStatistic', 0);
-        if (null !== $logCollection) {
-            /** @var LogModel $logEntry */
-            foreach ($logCollection as $logEntry) {
-                $logEntry->inStatistic = 1;
-                $logEntry->save();
             }
         }
 
@@ -111,6 +103,8 @@ class PostLoginListener
             }
 
             ++$arrayIndex;
+            $entry->inStatistic = 1;
+            $entry->save();
         }
 
         return $finalArray;

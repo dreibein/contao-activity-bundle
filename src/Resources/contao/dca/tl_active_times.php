@@ -28,26 +28,18 @@ $GLOBALS['TL_DCA'][$table] = [
         ],
         'username' => [
             'exclude' => true,
-            'inputType' => 'text',
-            'eval' => ['tl_class' => 'w50'],
             'sql' => ['type' => 'string', 'length' => 255, 'notnull' => true, 'default' => ''],
         ],
         'length' => [
             'exclude' => true,
-            'inputType' => 'text',
-            'eval' => ['tl_class' => 'w50'],
-            'sql' => ['type' => 'integer', 'notnull' => false, 'unsigned' => true, 'default' => 0],
+            'sql' => ['type' => 'integer', 'notnull' => true, 'unsigned' => true, 'default' => 0],
         ],
         'month' => [
             'exclude' => true,
-            'inputType' => 'text',
-            'eval' => ['tl_class' => 'w50'],
-            'sql' => ['type' => 'integer', 'notnull' => false, 'unsigned' => true, 'default' => 0],
+            'sql' => ['type' => 'integer', 'notnull' => true, 'unsigned' => true, 'default' => 0],
         ],
         'year' => [
             'exclude' => true,
-            'inputType' => 'text',
-            'eval' => ['tl_class' => 'w50'],
             'sql' => ['type' => 'integer', 'notnull' => true, 'unsigned' => true, 'default' => 0],
         ],
     ],

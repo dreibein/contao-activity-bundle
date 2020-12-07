@@ -21,20 +21,29 @@ class ParseBackendTemplateListener
 {
     public function __invoke(string $buffer, string $template): string
     {
-        if ('be_welcome' === $template) {
-            $entries = ActiveTimesModel::getAllEntries();
+        if ('be_welcome' !== $template) {
+            return $buffer;
+        }
 
-            if ($entries) {
-                $monthArray = $this->constructMonthArray($entries);
-            }
-            if ($monthArray) {
-                $html = $this->constructHTML($monthArray);
-            }
+        $entries = ActiveTimesModel::getAllEntries();
 
-            // Search for last </div>
-            $position = strrpos($buffer, '</div>');
+        if (null === $entries) {
+            return $buffer;
+        }
 
-            // Insert new table before last </div>
+        $monthArray = $this->constructMonthArray($entries);
+
+        if (null === $monthArray) {
+            return $buffer;
+        }
+
+        $html = $this->constructHTML($monthArray);
+
+        // Search for last </div>
+        $position = strrpos($buffer, '</div>');
+
+        // Insert new table before last </div>
+        if (false !== $position) {
             $buffer = substr_replace($buffer, $html, $position, 0);
         }
 
@@ -46,11 +55,37 @@ class ParseBackendTemplateListener
     {
         // Get all enabled users
         $userArray = UserModel::findByDisable(0);
-        if (null !== $userArray) {
-            $userArray = $userArray->fetchAll();
+        if (null === $userArray) {
+            return null;
+        }
+        $userArray = $userArray->fetchAll();
+
+        $currentYear = date('Y');
+        $lastYear = $currentYear - 1;
+
+        foreach ($userArray as $user) {
+            // Initialise each user in each month for current year
+            // Initialise each user in each month for last year
+            for ($i = 12; $i >= 1; --$i) {
+                $monthArray[$currentYear][$i][$user['username']] = 0;
+                $monthArray[$lastYear][$i][$user['username']] = 0;
+            }
+
+            foreach ($entries as $entry) {
+                if ($entry['username']) {
+                    // Add the times to the months
+                    $monthArray[$entry['year']][$entry['month']][$entry['username']] += (int) $entry['length'];
+                }
+            }
         }
 
-        $months = [
+        return $monthArray;
+    }
+
+    // Constructs the html to insert to the template
+    public function constructHTML($monthArray)
+    {
+        $monthNames = [
             1 => 'Januar',
             2 => 'Februar',
             3 => 'März',
@@ -65,52 +100,6 @@ class ParseBackendTemplateListener
             12 => 'Dezember',
         ];
 
-        $currentYear = date('Y');
-        $lastYear = $currentYear - 1;
-
-        foreach ($userArray as $user) {
-            // Initialise each user in each month for current year
-            $monthArray[$currentYear][$months[12]][$user['username']] = 0;
-            $monthArray[$currentYear][$months[11]][$user['username']] = 0;
-            $monthArray[$currentYear][$months[10]][$user['username']] = 0;
-            $monthArray[$currentYear][$months[9]][$user['username']] = 0;
-            $monthArray[$currentYear][$months[8]][$user['username']] = 0;
-            $monthArray[$currentYear][$months[7]][$user['username']] = 0;
-            $monthArray[$currentYear][$months[6]][$user['username']] = 0;
-            $monthArray[$currentYear][$months[5]][$user['username']] = 0;
-            $monthArray[$currentYear][$months[4]][$user['username']] = 0;
-            $monthArray[$currentYear][$months[3]][$user['username']] = 0;
-            $monthArray[$currentYear][$months[2]][$user['username']] = 0;
-            $monthArray[$currentYear][$months[1]][$user['username']] = 0;
-
-            // Initialise each user in each month for last year
-            $monthArray[$lastYear][$months[12]][$user['username']] = 0;
-            $monthArray[$lastYear][$months[11]][$user['username']] = 0;
-            $monthArray[$lastYear][$months[10]][$user['username']] = 0;
-            $monthArray[$lastYear][$months[9]][$user['username']] = 0;
-            $monthArray[$lastYear][$months[8]][$user['username']] = 0;
-            $monthArray[$lastYear][$months[7]][$user['username']] = 0;
-            $monthArray[$lastYear][$months[6]][$user['username']] = 0;
-            $monthArray[$lastYear][$months[5]][$user['username']] = 0;
-            $monthArray[$lastYear][$months[4]][$user['username']] = 0;
-            $monthArray[$lastYear][$months[3]][$user['username']] = 0;
-            $monthArray[$lastYear][$months[2]][$user['username']] = 0;
-            $monthArray[$lastYear][$months[1]][$user['username']] = 0;
-
-            foreach ($entries as $entry) {
-                if ($entry['username']) {
-                    // Add the times to the months
-                    $monthArray[$entry['year']][$months[$entry['month']]][$entry['username']] += (int) $entry['length'];
-                }
-            }
-        }
-
-        return $monthArray;
-    }
-
-    // Constructs the html to insert to the template
-    public function constructHTML($monthArray)
-    {
         $html = '<div class="tl_listing_container list_view"><br><h2>Übersicht der Bearbeitungszeit aller Nutzer</h2><br>';
         foreach ($monthArray as $year => $months) {
             foreach ($months as $month => $users) {
@@ -126,7 +115,7 @@ class ParseBackendTemplateListener
                             $headerPrinted = true;
 
                             // Table header is constructed
-                            $html .= '<table class="tl_listing"><thead><tr><th class="tl_folder_tlist" colspan="2">' . $month . ' ' . $year . '</th></tr></thead><tbody><tr class="toggle_select hover-row odd"><td class="tl_file_list" style="width:33.33%;"><strong>Benutzername</strong></td><td class="tl_file_list"><strong>Zeit</strong></td></tr>';
+                            $html .= '<table class="tl_listing"><thead><tr><th class="tl_folder_tlist" colspan="2">' . $monthNames[$month] . ' ' . $year . '</th></tr></thead><tbody><tr class="toggle_select hover-row odd"><td class="tl_file_list" style="width:33.33%;"><strong>Benutzername</strong></td><td class="tl_file_list"><strong>Zeit</strong></td></tr>';
                         }
 
                         // Set lines to even / odd for styling
