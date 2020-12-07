@@ -25,13 +25,7 @@ class ParseBackendTemplateListener
             return $buffer;
         }
 
-        $entries = ActiveTimesModel::getAllEntries();
-
-        if (null === $entries) {
-            return $buffer;
-        }
-
-        $monthArray = $this->constructMonthArray($entries);
+        $monthArray = $this->constructMonthArray();
 
         if (null === $monthArray) {
             return $buffer;
@@ -51,14 +45,20 @@ class ParseBackendTemplateListener
     }
 
     // Adds the times for each user to the corresponding month
-    public function constructMonthArray($entries)
+    public function constructMonthArray()
     {
         // Get all enabled users
+        /** @var UserModel $userArray */
         $userArray = UserModel::findByDisable(0);
         if (null === $userArray) {
             return null;
         }
-        $userArray = $userArray->fetchAll();
+
+        /** @var ActiveTimesModel $entries */
+        $entries = ActiveTimesModel::getAllEntries();
+        if (null === $entries) {
+            return null;
+        }
 
         $currentYear = date('Y');
         $lastYear = $currentYear - 1;
@@ -67,19 +67,19 @@ class ParseBackendTemplateListener
             // Initialise each user in each month for current year
             // Initialise each user in each month for last year
             for ($i = 12; $i >= 1; --$i) {
-                $monthArray[$currentYear][$i][$user['username']] = 0;
-                $monthArray[$lastYear][$i][$user['username']] = 0;
+                $monthArray[$currentYear][$i][$user->username] = 0;
+                $monthArray[$lastYear][$i][$user->username] = 0;
             }
 
             foreach ($entries as $entry) {
-                if ($entry['username']) {
+                if ($entry->username) {
                     // Add the times to the months
-                    $monthArray[$entry['year']][$entry['month']][$entry['username']] += (int) $entry['length'];
+                    $monthArray[$entry->year][$entry->month][$entry->username] += (int) $entry->length;
                 }
             }
         }
 
-        return $monthArray;
+        return $monthArray ?? null;
     }
 
     // Constructs the html to insert to the template

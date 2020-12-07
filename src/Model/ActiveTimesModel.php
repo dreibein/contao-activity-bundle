@@ -49,28 +49,7 @@ class ActiveTimesModel extends Model
         $currentYear = date('Y');
         $lastYear = $currentYear - 1;
         $currentMonth = date('n');
-        $entryArray[$currentYear] = [];
-        $entryArray[$lastYear] = [];
 
-        $currentYearArray = self::findBy('year', $currentYear);
-        if (null !== $currentYearArray) {
-            $currentYearArray = $currentYearArray->fetchAll();
-        }
-
-        $lastYearArray = static::findBy(['year = ?', 'month > ?'], [$lastYear, $currentMonth]);
-
-        if (null !== $lastYearArray) {
-            $lastYearArray = $lastYearArray->fetchAll();
-        }
-
-        if (null !== $lastYearArray && null !== $currentYearArray) {
-            return array_merge($currentYearArray, $lastYearArray);
-        }
-        if (null === $lastYearArray && null !== $currentYearArray) {
-            return $currentYearArray;
-        }
-        if (null !== $lastYearArray && null === $currentYearArray) {
-            return $lastYearArray;
-        }
+        return self::findBy(['year = ? OR (year = ? AND month > ?)'], [$currentYear, $lastYear, $currentMonth]);
     }
 }
