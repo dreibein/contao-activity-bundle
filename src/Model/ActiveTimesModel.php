@@ -13,7 +13,6 @@ namespace Contao\ActivityBundle\Model;
 use Contao\Model;
 
 /**
- * @property int    $id
  * @property string $username
  * @property int    $length
  * @property string $month
