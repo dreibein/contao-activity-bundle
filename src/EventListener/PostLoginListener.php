@@ -111,8 +111,8 @@ class PostLoginListener
                 // If last entry was not a login --> time can be saved
                 if (0 === $wasLogin) {
                     $finalArray[$arrayIndex]['length'] = $savedTimes['endTime'] - $savedTimes['startTime'];
-                    $finalArray[$arrayIndex]['month'] = date('n', $savedTimes['endTime']);
-                    $finalArray[$arrayIndex]['year'] = date('Y', $savedTimes['endTime']);
+                    $finalArray[$arrayIndex]['month'] = date('n', (int) $savedTimes['endTime']);
+                    $finalArray[$arrayIndex]['year'] = date('Y', (int) $savedTimes['endTime']);
                 }
                 $savedTimes['startTime'] = $entry->tstamp;
                 $wasLogin = 1;
