@@ -27,37 +27,37 @@ class ParseBackendTemplateListener
 
         $monthArray = $this->constructMonthArray();
 
-        if (null === $monthArray) {
+        if (0 === \count($monthArray)) {
             return $buffer;
         }
-
-        $html = $this->constructHTML($monthArray);
 
         // Search for last </div>
         $position = strrpos($buffer, '</div>');
 
-        // Insert new table before last </div>
-        if (false !== $position) {
-            $buffer = substr_replace($buffer, $html, $position, 0);
+        if (false === $position) {
+            return $buffer;
         }
 
-        return $buffer;
+        $html = $this->constructHTML($monthArray);
+        // Insert new table before last </div>
+        return substr_replace($buffer, $html, $position, 0);
     }
 
     // Adds the times for each user to the corresponding month
     public function constructMonthArray()
     {
+        $monthArray = [];
         // Get all enabled users
         /** @var UserModel $userArray */
         $userArray = UserModel::findByDisable(0);
         if (null === $userArray) {
-            return null;
+            return $monthArray;
         }
 
         /** @var ActiveTimesModel $entries */
         $entries = ActiveTimesModel::getAllEntries();
         if (null === $entries) {
-            return null;
+            return $monthArray;
         }
 
         $currentYear = date('Y');
@@ -79,11 +79,11 @@ class ParseBackendTemplateListener
             }
         }
 
-        return $monthArray ?? null;
+        return $monthArray;
     }
 
     // Constructs the html to insert to the template
-    public function constructHTML($monthArray)
+    public function constructHTML($monthArray): string
     {
         $monthNames = [
             1 => 'Januar',
@@ -140,6 +140,6 @@ class ParseBackendTemplateListener
             }
         }
 
-        return $html .= '</div>';
+        return $html . '</div>';
     }
 }

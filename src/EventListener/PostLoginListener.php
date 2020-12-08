@@ -39,6 +39,8 @@ class PostLoginListener
     // Get all logs for each user
     public function getTimesPerUser(Collection $users)
     {
+        $activeTimes = [];
+
         /** @var UserModel $user */
         foreach ($users as $user) {
             $logCollection = LogModel::findBy(['inStatistic = ?', 'username = ?'], [0, $user->username], ['order' => 'tstamp ASC']);
