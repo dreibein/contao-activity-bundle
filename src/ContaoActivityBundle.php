@@ -1,11 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 /*
- * This file is part of [package name].
+ * This file is part of Dreibein Activity Bundle.
  *
- * (c) John Doe
- *
- * @license LGPL-3.0-or-later
+ * (c) Werbeagentur Dreibein GmbH
  */
 
 namespace Contao\ActivityBundle;
