@@ -15,5 +15,5 @@ $table = 'tl_log';
 // Add the data-protection-page-field to the dca, so it can be added to the database
 $GLOBALS['TL_DCA'][$table]['fields']['inStatistic'] = [
     'exclude' => true,
-    'sql' => ['type' => 'bool', 'length' => 1, 'notnull' => true, 'default' => 0],
+    'sql' => ['type' => 'boolean', 'length' => 1, 'notnull' => true, 'default' => 0],
 ];
