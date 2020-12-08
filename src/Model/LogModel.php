@@ -13,7 +13,6 @@ namespace Contao\ActivityBundle\Model;
 use Contao\Model;
 
 /**
- * @property int    $id
  * @property int    $tstamp
  * @property string $source
  * @property string $action

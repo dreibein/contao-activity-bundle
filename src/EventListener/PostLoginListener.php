@@ -23,21 +23,37 @@ use Contao\UserModel;
  */
 class PostLoginListener
 {
+    /**
+     * Hook when a user has logged in.
+     * Create the last times to the ActiveTimesModel.
+     *
+     * @param User $user
+     */
     public function __invoke(User $user): void
     {
+        // check if user is a backend user
         if (!$user instanceof BackendUser) {
             return;
         }
+
+        // find all active users
         $allUsers = UserModel::findByDisable(0);
         if (null === $allUsers) {
             return;
         }
+
         $userTimesArray = $this->getTimesPerUser($allUsers);
         ActiveTimesModel::insertTimes($userTimesArray);
     }
 
-    // Get all logs for each user
-    public function getTimesPerUser(Collection $users)
+    /**
+     * Get all logs for each user.
+     *
+     * @param Collection $users
+     *
+     * @return array
+     */
+    private function getTimesPerUser(Collection $users): array
     {
         $activeTimes = [];
 
@@ -59,8 +75,14 @@ class PostLoginListener
         return $activeTimes;
     }
 
-    // Evaluates the active times per user
-    public function evaluateTimes(Collection $logCollection)
+    /**
+     * Evaluates the active times per user.
+     *
+     * @param Collection $logCollection
+     *
+     * @return array
+     */
+    private function evaluateTimes(Collection $logCollection): array
     {
         // Setting a time array initially
         $savedTimes = [
@@ -89,8 +111,8 @@ class PostLoginListener
                 // If last entry was not a login --> time can be saved
                 if (0 === $wasLogin) {
                     $finalArray[$arrayIndex]['length'] = $savedTimes['endTime'] - $savedTimes['startTime'];
-                    $finalArray[$arrayIndex]['month'] = date('n', (int) $savedTimes['endTime']);
-                    $finalArray[$arrayIndex]['year'] = date('Y', (int) $savedTimes['endTime']);
+                    $finalArray[$arrayIndex]['month'] = date('n', $savedTimes['endTime']);
+                    $finalArray[$arrayIndex]['year'] = date('Y', $savedTimes['endTime']);
                 }
                 $savedTimes['startTime'] = $entry->tstamp;
                 $wasLogin = 1;

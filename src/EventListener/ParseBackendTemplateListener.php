@@ -19,71 +19,93 @@ use Contao\UserModel;
  */
 class ParseBackendTemplateListener
 {
+    /**
+     * Extend the be_welcome template and add a user statistic to it.
+     *
+     * @param string $buffer
+     * @param string $template
+     *
+     * @return string
+     */
     public function __invoke(string $buffer, string $template): string
     {
+        // check if the template is be_welcome
         if ('be_welcome' !== $template) {
             return $buffer;
         }
 
-        $monthArray = $this->constructMonthArray();
-
-        if (0 === \count($monthArray)) {
-            return $buffer;
-        }
-
-        // Search for last </div>
+        // search for the last </div> in the buffer
         $position = strrpos($buffer, '</div>');
 
         if (false === $position) {
             return $buffer;
         }
 
-        $html = $this->constructHTML($monthArray);
-        // Insert new table before last </div>
+        // create statistic data
+        $monthArray = $this->collectStatisticData();
+
+        if (0 === \count($monthArray)) {
+            return $buffer;
+        }
+
+        $html = $this->generateHtml($monthArray);
+
+        // insert new table before last </div>
         return substr_replace($buffer, $html, $position, 0);
     }
 
-    // Adds the times for each user to the corresponding month
-    public function constructMonthArray()
+    /**
+     * Adds the times for each user to the corresponding month.
+     *
+     * @return array
+     */
+    private function collectStatisticData(): array
     {
-        $monthArray = [];
-        // Get all enabled users
-        /** @var UserModel $userArray */
-        $userArray = UserModel::findByDisable(0);
-        if (null === $userArray) {
-            return $monthArray;
+        // get all active users
+        $users = UserModel::findByDisable(0);
+        if (null === $users) {
+            return [];
         }
 
-        /** @var ActiveTimesModel $entries */
+        // get all time activities
         $entries = ActiveTimesModel::getAllEntries();
         if (null === $entries) {
-            return $monthArray;
+            return [];
         }
 
+        $statistic = [];
         $currentYear = date('Y');
         $lastYear = $currentYear - 1;
 
-        foreach ($userArray as $user) {
+        /** @var UserModel $user */
+        foreach ($users as $user) {
             // Initialise each user in each month for current year
             // Initialise each user in each month for last year
             for ($i = 12; $i >= 1; --$i) {
-                $monthArray[$currentYear][$i][$user->username] = 0;
-                $monthArray[$lastYear][$i][$user->username] = 0;
+                $statistic[$currentYear][$i][$user->username] = 0;
+                $statistic[$lastYear][$i][$user->username] = 0;
             }
 
+            /** @var ActiveTimesModel $entry */
             foreach ($entries as $entry) {
                 if ($entry->username) {
                     // Add the times to the months
-                    $monthArray[$entry->year][$entry->month][$entry->username] += (int) $entry->length;
+                    $statistic[$entry->year][$entry->month][$entry->username] += (int) $entry->length;
                 }
             }
         }
 
-        return $monthArray;
+        return $statistic;
     }
 
-    // Constructs the html to insert to the template
-    public function constructHTML($monthArray): string
+    /**
+     * Construct the html to insert to the template.
+     *
+     * @param array $monthArray
+     *
+     * @return string
+     */
+    private function generateHtml(array $monthArray): string
     {
         $monthNames = [
             1 => 'Januar',
