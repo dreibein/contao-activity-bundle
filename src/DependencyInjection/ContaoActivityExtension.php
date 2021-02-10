@@ -1,11 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 /*
- * This file is part of [package name].
+ * This file is part of Dreibein Activity Bundle.
  *
- * (c) John Doe
- *
- * @license LGPL-3.0-or-later
+ * (c) Werbeagentur Dreibein GmbH
  */
 
 namespace Contao\ActivityBundle\DependencyInjection;
@@ -20,11 +20,11 @@ class ContaoActivityExtension extends Extension
     /**
      * {@inheritdoc}
      */
-    public function load(array $mergedConfig, ContainerBuilder $container)
+    public function load(array $configs, ContainerBuilder $container): void
     {
         $loader = new YamlFileLoader(
             $container,
-            new FileLocator(__DIR__.'/../Resources/config')
+            new FileLocator(__DIR__ . '/../Resources/config')
         );
 
         $loader->load('services.yml');

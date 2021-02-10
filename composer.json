@@ -1,13 +1,13 @@
 {
     "name": "dreibein/contao-activity-bundle",
     "type": "contao-bundle",
-    "description": "Activity Bundle",
+    "description": "Dieses Bundle erfasst die Dauer der Arbeiten aller Benutzer im Backend von Contao. Diese werden addiert und im Dasboard ausgegeben. So erhält man eine schnelle Übersicht, welche Nutzer wie lange aktiv sind.",
     "homepage": "https://contao.org",
     "license": "LGPL-3.0-or-later",
     "authors": [
         {
-            "name": "Werbeagentur Dreibein",
-            "homepage": "https://www.agentur-dreibein.de/"
+            "name": "Werbeagentur Dreibein GmbH",
+            "homepage": "https://www.agentur-dreibein.de"
         }
     ],
     "require": {
