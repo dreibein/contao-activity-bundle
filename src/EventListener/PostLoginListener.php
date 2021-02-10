@@ -98,28 +98,31 @@ class PostLoginListener
 
         // Array index originally for debugging purposes
         $arrayIndex = 0;
-
+        $logCount = count($logCollection);
         // Loop logentries
         /** @var LogModel $entry */
-        foreach ($logCollection as $entry) {
+        foreach ($logCollection as $index => $entry) {
             // Skip auto logout; causes bloated active times
-            if ('ACCESS' === $entry->action && false !== strpos($entry->text, 'logged out automatically')) {
+
+            if ('ACCESS' === $entry->action && false !== strpos($entry->text, 'logged out automatically') || false !== strpos($entry->text, 'Invalid password submitted') || false !== strpos($entry->text, 'locked')) {
                 continue;
             }
 
             if ('ACCESS' === $entry->action && false !== strpos($entry->text, 'logged in')) {
                 // If last entry was not a login --> time can be saved
                 if (0 === $wasLogin) {
-                    $finalArray[$arrayIndex]['length'] = $savedTimes['endTime'] - $savedTimes['startTime'];
-                    $finalArray[$arrayIndex]['month'] = date('n', (int) $savedTimes['endTime']);
-                    $finalArray[$arrayIndex]['year'] = date('Y', (int) $savedTimes['endTime']);
+                    $this->addTimesToArray($finalArray, $savedTimes, $arrayIndex);
                 }
                 $savedTimes['startTime'] = $entry->tstamp;
                 $wasLogin = 1;
-            } else {
+            } elseif ('ACCESS' !== $entry->action || ('ACCESS' === $entry->action && false !== strpos($entry->text, 'logged out'))) {
                 // Kicks in if first log entry was not a login
                 if (0 === $arrayIndex) {
                     $savedTimes['startTime'] = $entry->tstamp;
+                }
+
+                if (($index + 1) === $logCount) {
+                    $this->addTimesToArray($finalArray, $savedTimes, $arrayIndex);
                 }
 
                 $savedTimes['endTime'] = $entry->tstamp;
@@ -132,5 +135,11 @@ class PostLoginListener
         }
 
         return $finalArray;
+    }
+
+    private function addTimesToArray (array &$finalArray, array $savedTimes, $arrayIndex) {
+        $finalArray[$arrayIndex]['length'] = $savedTimes['endTime'] - $savedTimes['startTime'];
+        $finalArray[$arrayIndex]['month'] = date('n', (int) $savedTimes['endTime']);
+        $finalArray[$arrayIndex]['year'] = date('Y', (int) $savedTimes['endTime']);
     }
 }

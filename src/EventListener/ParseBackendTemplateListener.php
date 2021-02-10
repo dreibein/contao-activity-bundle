@@ -88,7 +88,7 @@ class ParseBackendTemplateListener
 
             /** @var ActiveTimesModel $entry */
             foreach ($entries as $entry) {
-                if ($entry->username) {
+                if ($entry->username === $user->username) {
                     // Add the times to the months
                     $statistic[$entry->year][$entry->month][$entry->username] += (int) $entry->length;
                 }
@@ -132,7 +132,7 @@ class ParseBackendTemplateListener
                 $headerPrinted = false;
 
                 foreach ($users as $username => $time) {
-                    if ($time) {
+                    if ($time >= 60) {
                         if (!$headerPrinted) {
                             $headerPrinted = true;
 
