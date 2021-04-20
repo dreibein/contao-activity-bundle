@@ -13,6 +13,7 @@ namespace Contao\ActivityBundle\EventListener;
 use Contao\ActivityBundle\Repository\ActiveTimesRepository;
 use Contao\CoreBundle\ServiceAnnotation\Hook;
 use Contao\UserModel;
+use Safe\DateTimeImmutable;
 
 /**
  * @Hook("parseBackendTemplate")
@@ -87,18 +88,20 @@ class ParseBackendTemplateListener
         }
 
         $statistic = [];
-        $currentYear = date('Y');
-        $lastYear = $currentYear - 1;
+        $date = new DateTimeImmutable();
+        $year = $date->format('Y');
+        $lastYear = $year - 1;
 
         /** @var UserModel $user */
         foreach ($users as $user) {
             // Initialise each user in each month for current year
             // Initialise each user in each month for last year
             for ($i = 12; $i >= 1; --$i) {
-                $statistic[$currentYear][$i][$user->username] = 0;
+                $statistic[$year][$i][$user->username] = 0;
                 $statistic[$lastYear][$i][$user->username] = 0;
             }
 
+            // Fill the array with values
             foreach ($entries as $entry) {
                 if ($entry->getUsername() === $user->username) {
                     // Add the times to the months

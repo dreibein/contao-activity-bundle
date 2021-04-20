@@ -116,7 +116,12 @@ class PostLoginListener
         foreach ($logCollection as $index => $entry) {
             // Skip auto logout; causes bloated active times
 
-            if ('ACCESS' === $entry->action && false !== strpos($entry->text, 'logged out automatically') || false !== strpos($entry->text, 'Invalid password submitted') || false !== strpos($entry->text, 'locked')) {
+            if ('ACCESS' === $entry->action
+                && (
+                    false !== strpos($entry->text, 'logged out automatically')
+                    || false !== strpos($entry->text, 'Invalid password submitted')
+                    || false !== strpos($entry->text, 'locked')
+                )) {
                 continue;
             }
 
