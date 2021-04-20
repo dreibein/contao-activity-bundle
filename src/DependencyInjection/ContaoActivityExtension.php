@@ -30,7 +30,7 @@ class ContaoActivityExtension extends Extension
             new FileLocator(__DIR__ . '/../../config')
         );
 
-        $loader->load('services.yml');
-        $loader->load('listener.yml');
+        $loader->load('services.yaml');
+        $loader->load('listener.yaml');
     }
 }
