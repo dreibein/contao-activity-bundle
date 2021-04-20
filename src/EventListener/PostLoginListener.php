@@ -98,7 +98,7 @@ class PostLoginListener
 
         // Array index originally for debugging purposes
         $arrayIndex = 0;
-        $logCount = count($logCollection);
+        $logCount = \count($logCollection);
         // Loop logentries
         /** @var LogModel $entry */
         foreach ($logCollection as $index => $entry) {
@@ -137,7 +137,8 @@ class PostLoginListener
         return $finalArray;
     }
 
-    private function addTimesToArray (array &$finalArray, array $savedTimes, $arrayIndex) {
+    private function addTimesToArray(array &$finalArray, array $savedTimes, $arrayIndex): void
+    {
         $finalArray[$arrayIndex]['length'] = $savedTimes['endTime'] - $savedTimes['startTime'];
         $finalArray[$arrayIndex]['month'] = date('n', (int) $savedTimes['endTime']);
         $finalArray[$arrayIndex]['year'] = date('Y', (int) $savedTimes['endTime']);

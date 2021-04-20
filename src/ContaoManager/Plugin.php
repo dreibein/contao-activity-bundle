@@ -18,7 +18,12 @@ use Contao\ManagerPlugin\Bundle\Parser\ParserInterface;
 
 class Plugin implements BundlePluginInterface
 {
-    public function getBundles(ParserInterface $parser)
+    /**
+     * @param ParserInterface $parser
+     *
+     * @return array
+     */
+    public function getBundles(ParserInterface $parser): array
     {
         return [
             BundleConfig::create(ContaoActivityBundle::class)->setLoadAfter([ContaoCoreBundle::class]),

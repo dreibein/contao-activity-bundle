@@ -11,13 +11,16 @@
         }
     ],
     "require": {
-        "php": ">=7.4",
-        "contao/core-bundle": "^4.9.0"
+        "php": "^7.4 || ^8.0",
+        "contao/core-bundle": "^4.9",
+        "doctrine/doctrine-bundle": "^2.2.4",
+        "doctrine/orm": "^2.8"
     },
     "require-dev": {
-        "roave/security-advisories": "dev-master",
+        "roave/security-advisories": "*@dev",
         "contao/manager-plugin": "^2.0",
-        "friendsofphp/php-cs-fixer": "^2.12"
+        "friendsofphp/php-cs-fixer": "^2.18",
+        "phpunit/phpunit": "^9.5"
     },
     "extra": {
         "contao-manager-plugin": "Contao\\ActivityBundle\\ContaoManager\\Plugin"
