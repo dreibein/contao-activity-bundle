@@ -11,11 +11,6 @@ declare(strict_types=1);
 $GLOBALS['TL_DCA']['tl_active_times'] = [
     'config' => [
         'dataContainer' => 'Table',
-        'sql' => [
-            'keys' => [
-                'id' => 'primary',
-            ],
-        ],
     ],
     'fields' => [
         'username' => [

@@ -41,10 +41,10 @@ class ActiveTimesConverter
                 }
 
                 $activeTimes = new ActiveTimes();
-                $activeTimes->setUsername($user);
-                $activeTimes->setLength($time['length']);
-                $activeTimes->setMonth($time['month']);
-                $activeTimes->setYear($time['year']);
+                $activeTimes->setUsername((string) $user);
+                $activeTimes->setLength((int) $time['length']);
+                $activeTimes->setMonth((int) $time['month']);
+                $activeTimes->setYear((int) $time['year']);
 
                 $this->entityManager->persist($activeTimes);
             }

@@ -51,8 +51,7 @@ class ActiveTimesRepository extends ServiceEntityRepository
 
         return $this->createQueryBuilder('at')
             ->andWhere('at.year = :year')
-            ->orWhere('at.year = :last')
-            ->andWhere('at.month > :month')
+            ->orWhere('at.year = :last AND :month > :month')
             ->setParameter('year', $year)
             ->setParameter('last', $lastYear)
             ->setParameter('month', $month)
