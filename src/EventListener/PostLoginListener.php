@@ -10,26 +10,34 @@ declare(strict_types=1);
 
 namespace Contao\ActivityBundle\EventListener;
 
-use Contao\ActivityBundle\Model\ActiveTimesModel;
+use Contao\ActivityBundle\Converter\ActiveTimesConverter;
 use Contao\ActivityBundle\Model\LogModel;
 use Contao\BackendUser;
-use Contao\CoreBundle\ServiceAnnotation\Hook;
 use Contao\Model\Collection;
 use Contao\User;
 use Contao\UserModel;
 
-/**
- * @Hook("postLogin")
- */
 class PostLoginListener
 {
+    private ActiveTimesConverter $activeTimesConverter;
+
+    /**
+     * PostLoginListener constructor.
+     *
+     * @param ActiveTimesConverter $activeTimesConverter
+     */
+    public function __construct(ActiveTimesConverter $activeTimesConverter)
+    {
+        $this->activeTimesConverter = $activeTimesConverter;
+    }
+
     /**
      * Hook when a user has logged in.
      * Create the last times to the ActiveTimesModel.
      *
      * @param User $user
      */
-    public function __invoke(User $user): void
+    public function onPostLogin(User $user): void
     {
         // check if user is a backend user
         if (!$user instanceof BackendUser) {
@@ -43,7 +51,7 @@ class PostLoginListener
         }
 
         $userTimesArray = $this->getTimesPerUser($allUsers);
-        ActiveTimesModel::insertTimes($userTimesArray);
+        $this->activeTimesConverter->insertTimes($userTimesArray);
     }
 
     /**
@@ -59,6 +67,7 @@ class PostLoginListener
 
         /** @var UserModel $user */
         foreach ($users as $user) {
+            // Find all log entries for each user
             $logCollection = LogModel::findBy(['inStatistic = ?', 'username = ?'], [0, $user->username], ['order' => 'tstamp ASC']);
 
             if (null === $logCollection) {
@@ -84,37 +93,40 @@ class PostLoginListener
      */
     private function evaluateTimes(Collection $logCollection): array
     {
-        // Setting a time array initially
+        // Set the initial values for the time-array
         $savedTimes = [
             'startTime' => 0,
             'endTime' => 0,
         ];
 
         // Is 1 if last entry was a login
-        $wasLogin = 1;
-
-        // Variable for final active times
+        $wasLogin = true;
         $finalArray = [];
 
         // Array index originally for debugging purposes
         $arrayIndex = 0;
-        $logCount = count($logCollection);
-        // Loop logentries
+        $logCount = \count($logCollection);
+
+        // Loop log entries
         /** @var LogModel $entry */
         foreach ($logCollection as $index => $entry) {
-            // Skip auto logout; causes bloated active times
-
-            if ('ACCESS' === $entry->action && false !== strpos($entry->text, 'logged out automatically') || false !== strpos($entry->text, 'Invalid password submitted') || false !== strpos($entry->text, 'locked')) {
+            // Skip some log actions
+            if ('ACCESS' === $entry->action
+                && (
+                    false !== strpos($entry->text, 'logged out automatically')
+                    || false !== strpos($entry->text, 'Invalid password submitted')
+                    || false !== strpos($entry->text, 'locked')
+                )) {
                 continue;
             }
 
             if ('ACCESS' === $entry->action && false !== strpos($entry->text, 'logged in')) {
                 // If last entry was not a login --> time can be saved
-                if (0 === $wasLogin) {
+                if (false === $wasLogin) {
                     $this->addTimesToArray($finalArray, $savedTimes, $arrayIndex);
                 }
                 $savedTimes['startTime'] = $entry->tstamp;
-                $wasLogin = 1;
+                $wasLogin = true;
             } elseif ('ACCESS' !== $entry->action || ('ACCESS' === $entry->action && false !== strpos($entry->text, 'logged out'))) {
                 // Kicks in if first log entry was not a login
                 if (0 === $arrayIndex) {
@@ -126,7 +138,7 @@ class PostLoginListener
                 }
 
                 $savedTimes['endTime'] = $entry->tstamp;
-                $wasLogin = 0;
+                $wasLogin = false;
             }
 
             ++$arrayIndex;
@@ -137,7 +149,8 @@ class PostLoginListener
         return $finalArray;
     }
 
-    private function addTimesToArray (array &$finalArray, array $savedTimes, $arrayIndex) {
+    private function addTimesToArray(array &$finalArray, array $savedTimes, $arrayIndex): void
+    {
         $finalArray[$arrayIndex]['length'] = $savedTimes['endTime'] - $savedTimes['startTime'];
         $finalArray[$arrayIndex]['month'] = date('n', (int) $savedTimes['endTime']);
         $finalArray[$arrayIndex]['year'] = date('Y', (int) $savedTimes['endTime']);

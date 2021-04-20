@@ -10,15 +10,24 @@ declare(strict_types=1);
 
 namespace Contao\ActivityBundle\EventListener;
 
-use Contao\ActivityBundle\Model\ActiveTimesModel;
-use Contao\CoreBundle\ServiceAnnotation\Hook;
+use Contao\ActivityBundle\Repository\ActiveTimesRepository;
 use Contao\UserModel;
+use Safe\DateTimeImmutable;
 
-/**
- * @Hook("parseBackendTemplate")
- */
 class ParseBackendTemplateListener
 {
+    private ActiveTimesRepository $activeTimesRepository;
+
+    /**
+     * ParseBackendTemplateListener constructor.
+     *
+     * @param ActiveTimesRepository $activeTimesRepository
+     */
+    public function __construct(ActiveTimesRepository $activeTimesRepository)
+    {
+        $this->activeTimesRepository = $activeTimesRepository;
+    }
+
     /**
      * Extend the be_welcome template and add a user statistic to it.
      *
@@ -27,7 +36,7 @@ class ParseBackendTemplateListener
      *
      * @return string
      */
-    public function __invoke(string $buffer, string $template): string
+    public function onParseTemplate(string $buffer, string $template): string
     {
         // check if the template is be_welcome
         if ('be_welcome' !== $template) {
@@ -68,29 +77,31 @@ class ParseBackendTemplateListener
         }
 
         // get all time activities
-        $entries = ActiveTimesModel::getAllEntries();
-        if (null === $entries) {
+        try {
+            $entries = $this->activeTimesRepository->findAllForCurrentYear();
+        } catch (\Exception $e) {
             return [];
         }
 
         $statistic = [];
-        $currentYear = date('Y');
-        $lastYear = $currentYear - 1;
+        $date = new DateTimeImmutable();
+        $year = $date->format('Y');
+        $lastYear = $year - 1;
 
         /** @var UserModel $user */
         foreach ($users as $user) {
             // Initialise each user in each month for current year
             // Initialise each user in each month for last year
             for ($i = 12; $i >= 1; --$i) {
-                $statistic[$currentYear][$i][$user->username] = 0;
+                $statistic[$year][$i][$user->username] = 0;
                 $statistic[$lastYear][$i][$user->username] = 0;
             }
 
-            /** @var ActiveTimesModel $entry */
+            // Fill the array with values
             foreach ($entries as $entry) {
-                if ($entry->username === $user->username) {
+                if ($entry->getUsername() === $user->username) {
                     // Add the times to the months
-                    $statistic[$entry->year][$entry->month][$entry->username] += (int) $entry->length;
+                    $statistic[$entry->getYear()][$entry->getMonth()][$entry->getUsername()] += $entry->getLength();
                 }
             }
         }

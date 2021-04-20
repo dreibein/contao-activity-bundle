@@ -1,0 +1,19 @@
+services:
+    _instanceof:
+        Contao\CoreBundle\Framework\FrameworkAwareInterface:
+            calls:
+                - ["setFramework", ["@contao.framework"]]
+
+        Symfony\Component\DependencyInjection\ContainerAwareInterface:
+            calls:
+                - ["setContainer", ["@service_container"]]
+
+    dreibein_contao_active_times.repository.active_times:
+        class: Contao\ActivityBundle\Repository\ActiveTimesRepository
+        arguments:
+            - '@doctrine'
+
+    dreibein_contao_active_times.converter.active_times:
+        class: Contao\ActivityBundle\Converter\ActiveTimesConverter
+        arguments:
+            - '@doctrine.orm.default_entity_manager'

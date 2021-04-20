@@ -18,16 +18,19 @@ use Symfony\Component\DependencyInjection\Loader\YamlFileLoader;
 class ContaoActivityExtension extends Extension
 {
     /**
-     * {@inheritdoc}
+     * @param array            $configs
+     * @param ContainerBuilder $container
+     *
+     * @throws \Exception
      */
     public function load(array $configs, ContainerBuilder $container): void
     {
         $loader = new YamlFileLoader(
             $container,
-            new FileLocator(__DIR__ . '/../Resources/config')
+            new FileLocator(__DIR__ . '/../../config')
         );
 
-        $loader->load('services.yml');
-        $loader->load('listener.yml');
+        $loader->load('services.yaml');
+        $loader->load('listener.yaml');
     }
 }

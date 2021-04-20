@@ -1,0 +1,18 @@
+services:
+    _defaults:
+        autoconfigure: true
+
+
+    Contao\ActivityBundle\EventListener\ParseBackendTemplateListener:
+        class: Contao\ActivityBundle\EventListener\ParseBackendTemplateListener
+        arguments:
+            - '@dreibein_contao_active_times.repository.active_times'
+        tags:
+            - { name: contao.hook, hook: parseBackendTemplate, method: onParseTemplate }
+
+    Contao\ActivityBundle\EventListener\PostLoginListener:
+        class: Contao\ActivityBundle\EventListener\PostLoginListener
+        arguments:
+            - '@dreibein_contao_active_times.converter.active_times'
+        tags:
+            - { name: contao.hook, hook: postLogin, method: onPostLogin }
