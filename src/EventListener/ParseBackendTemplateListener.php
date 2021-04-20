@@ -11,13 +11,9 @@ declare(strict_types=1);
 namespace Contao\ActivityBundle\EventListener;
 
 use Contao\ActivityBundle\Repository\ActiveTimesRepository;
-use Contao\CoreBundle\ServiceAnnotation\Hook;
 use Contao\UserModel;
 use Safe\DateTimeImmutable;
 
-/**
- * @Hook("parseBackendTemplate")
- */
 class ParseBackendTemplateListener
 {
     private ActiveTimesRepository $activeTimesRepository;
@@ -40,7 +36,7 @@ class ParseBackendTemplateListener
      *
      * @return string
      */
-    public function __invoke(string $buffer, string $template): string
+    public function onParseTemplate(string $buffer, string $template): string
     {
         // check if the template is be_welcome
         if ('be_welcome' !== $template) {
