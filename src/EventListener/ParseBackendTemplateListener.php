@@ -10,7 +10,7 @@ declare(strict_types=1);
 
 namespace Contao\ActivityBundle\EventListener;
 
-use Contao\ActivityBundle\Model\ActiveTimesModel;
+use Contao\ActivityBundle\Repository\ActiveTimesRepository;
 use Contao\CoreBundle\ServiceAnnotation\Hook;
 use Contao\UserModel;
 
@@ -19,6 +19,18 @@ use Contao\UserModel;
  */
 class ParseBackendTemplateListener
 {
+    private ActiveTimesRepository $activeTimesRepository;
+
+    /**
+     * ParseBackendTemplateListener constructor.
+     *
+     * @param ActiveTimesRepository $activeTimesRepository
+     */
+    public function __construct(ActiveTimesRepository $activeTimesRepository)
+    {
+        $this->activeTimesRepository = $activeTimesRepository;
+    }
+
     /**
      * Extend the be_welcome template and add a user statistic to it.
      *
@@ -68,8 +80,9 @@ class ParseBackendTemplateListener
         }
 
         // get all time activities
-        $entries = ActiveTimesModel::getAllEntries();
-        if (null === $entries) {
+        try {
+            $entries = $this->activeTimesRepository->findAllForCurrentYear();
+        } catch (\Exception $e) {
             return [];
         }
 
@@ -86,11 +99,10 @@ class ParseBackendTemplateListener
                 $statistic[$lastYear][$i][$user->username] = 0;
             }
 
-            /** @var ActiveTimesModel $entry */
             foreach ($entries as $entry) {
-                if ($entry->username === $user->username) {
+                if ($entry->getUsername() === $user->username) {
                     // Add the times to the months
-                    $statistic[$entry->year][$entry->month][$entry->username] += (int) $entry->length;
+                    $statistic[$entry->getYear()][$entry->getMonth()][$entry->getUsername()] += $entry->getLength();
                 }
             }
         }

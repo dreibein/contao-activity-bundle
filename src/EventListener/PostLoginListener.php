@@ -10,7 +10,7 @@ declare(strict_types=1);
 
 namespace Contao\ActivityBundle\EventListener;
 
-use Contao\ActivityBundle\Model\ActiveTimesModel;
+use Contao\ActivityBundle\Converter\ActiveTimesConverter;
 use Contao\ActivityBundle\Model\LogModel;
 use Contao\BackendUser;
 use Contao\CoreBundle\ServiceAnnotation\Hook;
@@ -23,6 +23,18 @@ use Contao\UserModel;
  */
 class PostLoginListener
 {
+    private ActiveTimesConverter $activeTimesConverter;
+
+    /**
+     * PostLoginListener constructor.
+     *
+     * @param ActiveTimesConverter $activeTimesConverter
+     */
+    public function __construct(ActiveTimesConverter $activeTimesConverter)
+    {
+        $this->activeTimesConverter = $activeTimesConverter;
+    }
+
     /**
      * Hook when a user has logged in.
      * Create the last times to the ActiveTimesModel.
@@ -43,7 +55,7 @@ class PostLoginListener
         }
 
         $userTimesArray = $this->getTimesPerUser($allUsers);
-        ActiveTimesModel::insertTimes($userTimesArray);
+        $this->activeTimesConverter->insertTimes($userTimesArray);
     }
 
     /**
